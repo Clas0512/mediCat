@@ -14,6 +14,7 @@ FROM scratch
 
 WORKDIR /root/
 COPY --from=build /app/main .
+COPY --from=build /app/.env .
 
 EXPOSE 8083
 

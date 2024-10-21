@@ -12,5 +12,6 @@ RUN go build -o main ./cmd/main.go
 FROM scratch
 WORKDIR /root/
 COPY --from=build /app/main .
+COPY --from=build /app/.env .
 EXPOSE 8084
 CMD ["./main"]
