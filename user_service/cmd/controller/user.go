@@ -7,16 +7,49 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gitlab.com/dert-ops/mediCat/mediCat-Dev.git/cmd/config"
 )
+
+func GetUserFromAuthService(id string) (interface{}, int, error) {
+	authServiceURL := "http://auth_service:8080/" + id
+
+	// İsteği oluştur
+	req, err := http.NewRequest("GET", authServiceURL, nil)
+	if err != nil {
+		return nil, http.StatusInternalServerError, err
+	}
+
+	// Header'a User Service API Key'i ekle
+	req.Header.Set("User-Service-Authorization", config.UserServiceKey)
+
+	// HTTP client kullanarak isteği gönder
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, http.StatusBadGateway, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, resp.StatusCode, fmt.Errorf("auth service error: %s", resp.Status)
+	}
+
+	var user map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
+		return nil, http.StatusInternalServerError, err
+	}
+
+	return user, http.StatusOK, nil
+}
 
 func GetUserProfile(c *gin.Context) {
 	id := c.Param("id")
 
 	// Auth service'e istek gönderin
 	// Burada auth service URL'sini ve token'ı kullanarak kullanıcının profilini alabilirsiniz.
-	profile, err := GetUserFromAuthService(id)
+	profile, statusCode, err := GetUserFromAuthService(id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Kullanıcı bilgileri alınamadı"})
+		c.JSON(statusCode, gin.H{"error": "Kullanıcı bilgileri alınamadı"})
 		return
 	}
 
@@ -49,7 +82,7 @@ func UpdateUserProfile(c *gin.Context) {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Service-Authorization", "USER_SERVICE_API_KEY") //os.Getenv("USER_SERVICE_API_KEY")
+	req.Header.Set("User-Service-Authorization", config.UserServiceKey) //os.Getenv(config.UserServiceKey)
 
 	// Kullanıcı token'ını ekleyin
 	token := c.Request.Header.Get("Authorization")
@@ -98,7 +131,7 @@ func ResetUserPassword(c *gin.Context) {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Service-Authorization", "USER_SERVICE_API_KEY")
+	req.Header.Set("User-Service-Authorization", config.UserServiceKey)
 	// Kullanıcı token'ını ekleyin
 	token := c.Request.Header.Get("Authorization")
 	if token != "" {
@@ -135,7 +168,7 @@ func DeleteUserProfile(c *gin.Context) {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Service-Authorization", "USER_SERVICE_API_KEY")
+	req.Header.Set("User-Service-Authorization", config.UserServiceKey)
 
 	// Kullanıcı token'ını ekleyin
 	token := c.Request.Header.Get("Authorization")
@@ -157,36 +190,4 @@ func DeleteUserProfile(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Kullanıcı başarıyla silindi"})
-}
-
-func GetUserFromAuthService(id string) (interface{}, error) {
-	authServiceURL := "http://auth_service:8080/" + id
-
-	// İsteği oluştur
-	req, err := http.NewRequest("GET", authServiceURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	// Header'a User Service API Key'i ekle
-	req.Header.Set("User-Service-Authorization", "USER_SERVICE_API_KEY")
-
-	// HTTP client kullanarak isteği gönder
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("auth service error: %s", resp.Status)
-	}
-
-	var user map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
-		return nil, err
-	}
-
-	return user, nil
 }

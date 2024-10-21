@@ -6,6 +6,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"gitlab.com/dert-ops/mediCat/mediCat-Dev.git/cmd/config"
 )
 
 func AuthMiddleware() gin.HandlerFunc {
@@ -26,7 +27,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		token, err := jwt.Parse(bearerToken, func(token *jwt.Token) (interface{}, error) {
-			return []byte("selamdostumyagmurvarmiorda"), nil
+			return []byte(config.SecretKey), nil
 		})
 		if err != nil || !token.Valid {
 			c.JSON(http.StatusUnauthorized, "Invalid token")

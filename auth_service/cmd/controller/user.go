@@ -148,7 +148,7 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	token, err := jwt.Parse(bearerToken, func(token *jwt.Token) (interface{}, error) {
-		return []byte("selamdostumyagmurvarmiorda"), nil
+		return []byte(config.SecretKey), nil
 	})
 	log.Println(err)
 	if err != nil || !token.Valid {

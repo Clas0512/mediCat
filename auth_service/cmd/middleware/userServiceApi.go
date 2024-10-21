@@ -1,7 +1,9 @@
 package middleware
 
 import (
+	"log"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
@@ -10,7 +12,7 @@ import (
 func UserServiceAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		apiKey := c.GetHeader("User-Service-Authorization")
-		expectedApiKey := "USER_SERVICE_API_KEY"
+		expectedApiKey := os.Getenv("USER_SERVICE_KEY")
 
 		if apiKey != expectedApiKey {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Yetkisiz erişim"})
